@@ -1,0 +1,6 @@
+this is a secret message that nobody should read
+you need to find the hidden word in this sentence
+there is no way to decrypt this without the key
+every person in the room heard the loud noise
+the man went into the dark house without fear
+abcdefghijklmnopqrstuvwxyz
