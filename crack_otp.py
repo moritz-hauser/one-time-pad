@@ -1,9 +1,12 @@
 import sys 
 import re
 from itertools import combinations
+from collections import defaultdict, Counter
 
 # set true if you want to be asked permission for each match
 ASK_USER = False
+# stores value and count for every calculated byte of the key
+KEY_CANDIDATES = defaultdict(Counter)
 
 # ---------- CHECK ARGS ----------
 if len(sys.argv) > 2:
@@ -96,12 +99,7 @@ def crib_drag(combination: [bytes, bytes], crib: str, dictionary: set):
         """
         if verify_result(result, dictionary):
             print("Offset [", i, "] marked as hit.")
-            """
-            TODO
-            aus offset, crib und c2 kann nun der 
-            entsprechende teil des keys berechnet werden
-            zb: fn calculate_key_fraction(i, p2_guess, c2)
-            """
+            calculate_key_fraction(i, p2_guess, c2)
 
 # verify section result with dictionary and user input
 def verify_result(result: bytes, dictionary: set):
@@ -124,6 +122,18 @@ def verify_result(result: bytes, dictionary: set):
         print(ascii_result)
         user = input("Sensible word? ([ENTER]/'n'): ")
         return user.strip().lower() != 'n'
+ 
+    return True
+
+# calculate the decoded fraction of the key and add it to the data structure
+def calculate_key_fraction(start: int, p2_guess: bytes, c2: bytes):
+    for i in range(len(p2_guess)):
+        """
+        k = c2 XOR p2
+        """
+        key_byte = c2[start + i] ^ p2_guess[i]
+        # add byte to candidates at this position
+        KEY_CANDIDATES[start + i][key_byte] += 1
 
 
 
@@ -145,3 +155,36 @@ for i in range(len(msg_combinations)):
     for crib in cribs:
         # print("--- with crib: ", crib, "---")
         crib_drag(msg_combinations[i], crib, dictionary)
+
+# 5. visualize key
+print("\n--- RECONSTRUCTED KEY (most probable bytes) ---")
+max_key_index = max(KEY_CANDIDATES.keys())
+key = bytearray()
+
+for i in range(max_key_index + 1):
+    if i in KEY_CANDIDATES:
+        best_byte, count = KEY_CANDIDATES[i].most_common(1)[0]
+        key.append(best_byte)
+    else:
+        key.append(0)  # oder 0x00 als Platzhalter
+
+# Hex-Dump anzeigen
+print("HEX:")
+print(key.hex())
+
+# ASCII-Vorschau (für lesbare Teile)
+print("\nASCII (unprintable as '.'):")        
+ascii_preview = ''.join([chr(b) if 32 <= b < 127 else '.' for b in key])
+print(ascii_preview)
+
+# 6. decrypt flag
+decrypted_flag = bytes([c ^ k for c, k in zip(flag, key)])
+
+# Darstellung
+print("\n--- DECRYPTED FLAG ---")
+print(decrypted_flag)
+
+try:
+    print("ASCII:\n", decrypted_flag.decode())
+except UnicodeDecodeError:
+    print("Einige Zeichen konnten nicht dekodiert werden.")
