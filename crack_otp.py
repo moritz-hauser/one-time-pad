@@ -2,6 +2,9 @@ import sys
 import re
 from itertools import combinations
 
+# set true if you want to be asked permission for each match
+ASK_USER = True
+
 # ---------- CHECK ARGS ----------
 if len(sys.argv) > 2:
     print("Usage: python3 crack_otp.py [-d]")
@@ -62,7 +65,7 @@ def parse_dict_file(file: str):
         return set(word.strip().lower() for word in f if word.strip())
 
 # drag crib over pair of messages
-def crib_drag(combination: [bytes, bytes], crib: str):
+def crib_drag(combination: [bytes, bytes], crib: str, dictionary: set):
     """
     p1 = c1 XOR c2 XOR p2_guess
     p1 ... plaintext of message 1
@@ -91,7 +94,7 @@ def crib_drag(combination: [bytes, bytes], crib: str):
         -> decode result and ask user whether
         the result makes sense
         """
-        if user_verify_result(result):
+        if verify_result(result, dictionary):
             print("Offset [", i, "] marked as hit.")
             """
             TODO
@@ -100,8 +103,8 @@ def crib_drag(combination: [bytes, bytes], crib: str):
             zb: fn calculate_key_fraction(i, p2_guess, c2)
             """
 
-# verify section result with user input
-def user_verify_result(result: bytes):
+# verify section result with dictionary and user input
+def verify_result(result: bytes, dictionary: set):
     try:
         ascii_result = result.decode() 
     except UnicodeDecodeError:
@@ -110,9 +113,17 @@ def user_verify_result(result: bytes):
     # move on if string contains special characters
     if not re.fullmatch(r"[a-z ]+", ascii_result):
         return False
-    print(ascii_result)
-    user = input("English word? (y/n): ")
-    return user.strip().lower() == 'y'
+
+    # move on if not in dictionary
+    words = ascii_result.strip().lower().split()
+    if not any(word in dictionary for word in words):
+        return False
+
+    if ASK_USER:
+        # ask user confirmation
+        print(ascii_result)
+        user = input("Sensible word? ([ENTER]/'n'): ")
+        return user.strip().lower() != 'n'
 
 
 
@@ -130,7 +141,7 @@ dictionary = parse_dict_file(dict_file)
 # for every pair of messages
 msg_combinations = list(combinations(messages, 2))
 for i in range(len(msg_combinations)):
-    print("--- crib dragging for combination", i, "---")
+    # print("--- crib dragging for combination", i, "---")
     for crib in cribs:
-        print("--- with crib: ", crib, "---")
-        crib_drag(msg_combinations[i], crib)
+        # print("--- with crib: ", crib, "---")
+        crib_drag(msg_combinations[i], crib, dictionary)
