@@ -3,7 +3,7 @@ import re
 from itertools import combinations
 
 # set true if you want to be asked permission for each match
-ASK_USER = True
+ASK_USER = False
 
 # ---------- CHECK ARGS ----------
 if len(sys.argv) > 2:
