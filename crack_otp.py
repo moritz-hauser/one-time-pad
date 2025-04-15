@@ -137,7 +137,7 @@ cribs = parse_crib_file(crib_file)
 # 3. parse dict file
 dictionary = parse_dict_file(dict_file)
 
-# 3. crib drag every word
+# 4. crib drag every word
 # for every pair of messages
 msg_combinations = list(combinations(messages, 2))
 for i in range(len(msg_combinations)):
