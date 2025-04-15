@@ -3,10 +3,25 @@ import re
 from itertools import combinations
 
 # ---------- CHECK ARGS ----------
-if len(sys.argv) != 2:
-    print("Usage: python3 crack_otp.py [filename]")
+if len(sys.argv) > 2:
+    print("Usage: python3 crack_otp.py [-d]")
     sys.exit()
-input_file = sys.argv[1]
+
+if len(sys.argv) == 2:
+    if sys.argv[1] == "-d":
+        # use default files
+        encrypted_file = "stage_1.txt"
+        crib_file = "cribs.txt"
+        dict_file = "dict.txt"
+    else:
+        print("Usage: python3 crack_otp.py [-d]")
+        sys.exit()
+else:
+    # read user custom files
+    encrypted_file = input("File to decrypt: ")
+    crib_file = input("File with cribs: ")
+    dict_file = input("File with dictionary: ")
+
 
 # ---------- FUNCTIONS ----------
 # returns list of all messages in binary
@@ -27,6 +42,24 @@ def parse_cipher_file(file: str):
 
     flag = messages.pop()
     return messages, flag
+
+# returns list of cribs from file
+def parse_crib_file(file: str):
+    # read file
+    with open(file, 'r') as f:
+        lines = f.read().strip().split('\n')
+
+    cribs = []
+
+    for line in lines:
+        line = line.strip()
+        cribs.append(line)
+    
+    return cribs 
+
+def parse_dict_file(file: str):
+    with open(file, 'r') as f:
+        return set(word.strip().lower() for word in f if word.strip())
 
 # drag crib over pair of messages
 def crib_drag(combination: [bytes, bytes], crib: str):
@@ -85,11 +118,13 @@ def user_verify_result(result: bytes):
 
 # ---------- MAIN ----------
 # 1. parse input file
-messages, flag = parse_cipher_file(input_file)
+messages, flag = parse_cipher_file(encrypted_file)
 
-# 2. define cribs
-# source: https://en.wikipedia.org/wiki/Most_common_words_in_English
-cribs = ["that", "have", "with", "this", "from"]
+# 2. parse crib file
+cribs = parse_crib_file(crib_file)
+
+# 3. parse dict file
+dictionary = parse_dict_file(dict_file)
 
 # 3. crib drag every word
 # for every pair of messages
