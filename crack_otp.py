@@ -98,7 +98,7 @@ def crib_drag(combination: [bytes, bytes], crib: str, dictionary: set):
         the result makes sense
         """
         if verify_result(result, dictionary):
-            print("Offset [", i, "] marked as hit.")
+            #print("Offset [", i, "] marked as hit.")
             calculate_key_fraction(i, p2_guess, c2)
 
 # verify section result with dictionary and user input
@@ -166,13 +166,11 @@ for i in range(max_key_index + 1):
         best_byte, count = KEY_CANDIDATES[i].most_common(1)[0]
         key.append(best_byte)
     else:
-        key.append(0)  # oder 0x00 als Platzhalter
+        key.append(0)
 
-# Hex-Dump anzeigen
 print("HEX:")
 print(key.hex())
 
-# ASCII-Vorschau (für lesbare Teile)
 print("\nASCII (unprintable as '.'):")        
 ascii_preview = ''.join([chr(b) if 32 <= b < 127 else '.' for b in key])
 print(ascii_preview)
@@ -180,11 +178,28 @@ print(ascii_preview)
 # 6. decrypt flag
 decrypted_flag = bytes([c ^ k for c, k in zip(flag, key)])
 
-# Darstellung
 print("\n--- DECRYPTED FLAG ---")
 print(decrypted_flag)
-
 try:
     print("ASCII:\n", decrypted_flag.decode())
 except UnicodeDecodeError:
-    print("Einige Zeichen konnten nicht dekodiert werden.")
+    print("Flag cannot be portrayed in ASCII")
+
+# 7. decrypt messages with key
+print("\n--- DECRYPTED MESSAGES ---")
+
+for idx, msg in enumerate(messages):
+    result = ""
+    for i in range(len(msg)):
+        if i in KEY_CANDIDATES:
+            key_byte = KEY_CANDIDATES[i].most_common(1)[0][0]
+            decoded_char = chr(msg[i] ^ key_byte)
+            if 32 <= ord(decoded_char) < 127:
+                result += decoded_char
+            else:
+                result += '.' 
+        else:
+            result += '.'  
+    print(f"\n[Message {idx}]")
+    print(result)
+
